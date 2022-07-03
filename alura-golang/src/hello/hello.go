@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -11,6 +14,7 @@ const CHECK_NUMBER = 3
 const CHECK_DELAY = 5
 
 func main() {
+
 	intro()
 
 	for {
@@ -61,10 +65,7 @@ func readCommand() int {
 func startMonitoring() {
 	fmt.Println("Monitoring...")
 
-	sites := []string{
-		"https://httpstat.us/400",
-		"https://www.caelum.com.br",
-	}
+	sites := readSitesFromFile()
 
 	for i := 0; i < CHECK_NUMBER; i++ {
 		fmt.Println("> Run", i+1)
@@ -83,11 +84,42 @@ func startMonitoring() {
 }
 
 func healthCheck(site string) {
-	res, _ := http.Get(site)
+	res, err := http.Get(site)
+
+	if err != nil {
+		fmt.Println("Site health check failed", err)
+	}
 
 	if res.StatusCode == 200 {
 		fmt.Println(site, "is up")
 	} else {
 		fmt.Println(site, "is down. Status Code:", res.StatusCode)
 	}
+}
+
+func readSitesFromFile() []string {
+	sites := []string{}
+
+	file, err := os.Open("sites.txt")
+
+	if err != nil {
+		fmt.Println("Failure when opening file: ", err)
+	}
+
+	reader := bufio.NewReader(file)
+
+	for {
+		line, err := reader.ReadString('\n')
+		line = strings.TrimSpace(line)
+
+		sites = append(sites, line)
+
+		if err == io.EOF {
+			break
+		}
+	}
+
+	file.Close()
+
+	return sites
 }

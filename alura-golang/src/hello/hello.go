@@ -4,8 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -14,7 +16,6 @@ const CHECK_NUMBER = 3
 const CHECK_DELAY = 5
 
 func main() {
-
 	intro()
 
 	for {
@@ -27,6 +28,7 @@ func main() {
 			startMonitoring()
 		case 2:
 			fmt.Println("Displaying Logs")
+			displayLogs()
 		case 0:
 			fmt.Println("Exiting...")
 			os.Exit(0)
@@ -80,7 +82,6 @@ func startMonitoring() {
 			time.Sleep(CHECK_DELAY * time.Second)
 		}
 	}
-
 }
 
 func healthCheck(site string) {
@@ -92,8 +93,10 @@ func healthCheck(site string) {
 
 	if res.StatusCode == 200 {
 		fmt.Println(site, "is up")
+		writeLog(site, true)
 	} else {
 		fmt.Println(site, "is down. Status Code:", res.StatusCode)
+		writeLog(site, false)
 	}
 }
 
@@ -122,4 +125,27 @@ func readSitesFromFile() []string {
 	file.Close()
 
 	return sites
+}
+
+func writeLog(site string, status bool) {
+	file, err := os.OpenFile("log.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0640)
+
+	if err != nil {
+		fmt.Println("Failed when opening log file: ", err)
+	}
+
+	currentDateTime := time.Now().Format("2006-02-01 15:04:05")
+	file.WriteString("[" + currentDateTime + "] " + site + " - online " + strconv.FormatBool(status) + "\n")
+
+	file.Close()
+}
+
+func displayLogs() {
+	file, err := ioutil.ReadFile("log.txt")
+
+	if err != nil {
+		fmt.Println("Failed when opening log file: ", err)
+	}
+
+	fmt.Println(string(file))
 }

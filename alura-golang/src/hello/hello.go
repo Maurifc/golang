@@ -4,7 +4,11 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 )
+
+const CHECK_NUMBER = 3
+const CHECK_DELAY = 5
 
 func main() {
 	intro()
@@ -57,7 +61,28 @@ func readCommand() int {
 func startMonitoring() {
 	fmt.Println("Monitoring...")
 
-	site := "https://httpstat.us/400"
+	sites := []string{
+		"https://httpstat.us/400",
+		"https://www.caelum.com.br",
+	}
+
+	for i := 0; i < CHECK_NUMBER; i++ {
+		fmt.Println("> Run", i+1)
+
+		for _, site := range sites {
+			healthCheck(site)
+		}
+
+		// Skip sleep on last run
+		if i < CHECK_NUMBER-1 {
+			fmt.Println("\nDelaying next check for", CHECK_DELAY, "seconds\n")
+			time.Sleep(CHECK_DELAY * time.Second)
+		}
+	}
+
+}
+
+func healthCheck(site string) {
 	res, _ := http.Get(site)
 
 	if res.StatusCode == 200 {

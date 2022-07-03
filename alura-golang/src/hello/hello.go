@@ -2,26 +2,30 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 )
 
 func main() {
 	intro()
-	printMenu()
 
-	command := readCommand()
+	for {
+		printMenu()
 
-	switch command {
-	case 1:
-		fmt.Println("Monitoring...")
-	case 2:
-		fmt.Println("Displaying Logs")
-	case 0:
-		fmt.Println("Exiting...")
-		os.Exit(0)
-	default:
-		fmt.Println("Unknown command")
-		os.Exit(1)
+		command := readCommand()
+
+		switch command {
+		case 1:
+			startMonitoring()
+		case 2:
+			fmt.Println("Displaying Logs")
+		case 0:
+			fmt.Println("Exiting...")
+			os.Exit(0)
+		default:
+			fmt.Println("Unknown command")
+			os.Exit(1)
+		}
 	}
 }
 
@@ -48,4 +52,17 @@ func readCommand() int {
 	fmt.Println("\nThe chosen command was:", command)
 
 	return command
+}
+
+func startMonitoring() {
+	fmt.Println("Monitoring...")
+
+	site := "https://httpstat.us/400"
+	res, _ := http.Get(site)
+
+	if res.StatusCode == 200 {
+		fmt.Println(site, "is up")
+	} else {
+		fmt.Println(site, "is down. Status Code:", res.StatusCode)
+	}
 }

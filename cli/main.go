@@ -1,9 +1,9 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"time"
@@ -38,16 +38,6 @@ func main() {
 }
 
 func downloadBucketFiles() error {
-	//Writer
-	file, err := os.OpenFile("fileslist.txt", os.O_CREATE|os.O_RDWR, 0640)
-
-	if err != nil {
-		fmt.Errorf("Failed when opening file to write:", err)
-	}
-	defer file.Close()
-
-	writer := bufio.NewWriter(file)
-
 	// Context
 	ctx := context.Background()
 
@@ -78,8 +68,34 @@ func downloadBucketFiles() error {
 		if err != nil {
 			return fmt.Errorf("Bucket(%q).Objects: %v", bucketName, err)
 		}
-		fmt.Fprintln(writer, attrs.Name)
-		writer.Flush()
+
+		// Get Object
+		rc, err := bucket.Object(attrs.Name).NewReader(ctx)
+
+		if err != nil {
+			return fmt.Errorf("Object(%q).NewReader: %v", attrs.Name, err)
+		}
+
+		defer rc.Close()
+
+		//Writer
+		file, err := os.Create(attrs.Name)
+
+		if err != nil {
+			fmt.Errorf("Failed when creating file:", err)
+		}
+		defer file.Close()
+
+		// Copy object from Bucket to file
+		_, err = io.Copy(file, rc)
+
+		if err != nil {
+			fmt.Errorf("io.Copy: %v", err)
+		}
+
+		file.Close()
+
+		fmt.Printf("Object %v download to local file %v\n", attrs.Name, file.Name())
 	}
 
 	return nil

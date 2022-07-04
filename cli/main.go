@@ -41,7 +41,7 @@ func downloadBucketFiles() error {
 	// Context
 	ctx := context.Background()
 
-	// Client
+	// Get Client
 	client, err := storage.NewClient(ctx)
 
 	if err != nil {
@@ -56,10 +56,11 @@ func downloadBucketFiles() error {
 
 	defer cancel()
 
+	// Iterate over all object in the Bucket
 	it := bucket.Objects(ctx, nil)
 
 	for {
-		attrs, err := it.Next()
+		attrs, err := it.Next() // Get object information (attrs)
 
 		if err == iterator.Done {
 			break
@@ -69,7 +70,7 @@ func downloadBucketFiles() error {
 			return fmt.Errorf("Bucket(%q).Objects: %v", bucketName, err)
 		}
 
-		// Get Object
+		// Get Object Reader
 		rc, err := bucket.Object(attrs.Name).NewReader(ctx)
 
 		if err != nil {
@@ -78,7 +79,7 @@ func downloadBucketFiles() error {
 
 		defer rc.Close()
 
-		//Writer
+		// Create destination file (empty)
 		file, err := os.Create(attrs.Name)
 
 		if err != nil {
@@ -86,7 +87,7 @@ func downloadBucketFiles() error {
 		}
 		defer file.Close()
 
-		// Copy object from Bucket to file
+		// Copy bytes from Bucket to file
 		_, err = io.Copy(file, rc)
 
 		if err != nil {
@@ -95,7 +96,7 @@ func downloadBucketFiles() error {
 
 		file.Close()
 
-		fmt.Printf("Object %v download to local file %v\n", attrs.Name, file.Name())
+		fmt.Printf("Object %v downloaded to local file %v\n", attrs.Name, file.Name())
 	}
 
 	return nil
